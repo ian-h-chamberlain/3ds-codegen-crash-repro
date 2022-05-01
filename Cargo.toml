@@ -7,6 +7,6 @@ authors = [""]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-linker-fix-3ds = { path = "../rust-linker-fix-3ds" }
-pthread-3ds = { path = "../pthread-3ds" }
+linker-fix-3ds = { git = "https://github.com/Meziu/rust-linker-fix-3ds.git" }
+pthread-3ds = { git = "https://github.com/Meziu/pthread-3ds.git" }
 regex = "1.5.5"
