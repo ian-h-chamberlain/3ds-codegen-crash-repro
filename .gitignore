@@ -1,3 +1,4 @@
 /.cargo
-/target
+/target*
 cargo-output.txt
+cargo-output/
