@@ -1,6 +1,4 @@
 use nalgebra::{Isometry2, Point2, Vector2};
-use parry2d::bounding_volume::{BoundingSphere, AABB};
-use parry2d::mass_properties::MassProperties;
 use parry2d::utils::IsometryOps;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -9,42 +7,71 @@ pub struct Cuboid {
     pub half_extents: Vector2<f32>,
 }
 
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub struct AABB {
+    pub mins: Point2<f32>,
+    pub maxs: Point2<f32>,
+}
+
+impl AABB {
+    #[inline]
+    fn transform_by(&self, m: &Isometry2<f32>) -> Self {
+        let ls_center = self.center();
+        let center = m * ls_center;
+        let ws_half_extents = m.absolute_transform_vector(&self.half_extents());
+
+        Self {
+            mins: center + (-ws_half_extents),
+            maxs: center + ws_half_extents,
+        }
+    }
+
+    #[inline]
+    fn center(&self) -> Point2<f32> {
+        nalgebra::center(&self.mins, &self.maxs)
+    }
+
+    /// The half extents of this AABB.
+    #[inline]
+    fn half_extents(&self) -> Vector2<f32> {
+        let half: f32 = nalgebra::convert::<f64, f32>(0.5);
+        (self.maxs - self.mins) * half
+    }
+}
+
 impl Cuboid {
     #[inline]
     fn aabb(&self, pos: &Isometry2<f32>) -> AABB {
         let center = Point2::from(pos.translation.vector);
         let ws_half_extents = pos.absolute_transform_vector(&self.half_extents);
 
-        AABB::from_half_extents(center, ws_half_extents)
+        {
+            let mins = center - ws_half_extents;
+            let maxs = center + ws_half_extents;
+            AABB { mins, maxs }
+        }
     }
 
     #[inline]
     fn local_aabb(&self) -> AABB {
         let half_extents = Point2::from(self.half_extents);
 
-        AABB::new(-half_extents, half_extents)
-    }
-
-    #[inline]
-    fn local_bounding_sphere(&self) -> BoundingSphere {
-        let radius = self.half_extents.norm();
-        BoundingSphere::new(Point2::origin(), radius)
+        {
+            let mins = -half_extents;
+            AABB {
+                mins,
+                maxs: half_extents,
+            }
+        }
     }
 }
 
 pub trait Shape {
     fn compute_local_aabb(&self) -> AABB;
 
-    fn compute_local_bounding_sphere(&self) -> BoundingSphere;
-
     fn compute_aabb(&self, position: &Isometry2<f32>) -> AABB {
         self.compute_local_aabb().transform_by(position)
     }
-    fn compute_bounding_sphere(&self, position: &Isometry2<f32>) -> BoundingSphere {
-        self.compute_local_bounding_sphere().transform_by(position)
-    }
-
-    fn mass_properties(&self, density: f32) -> MassProperties;
 }
 
 impl Shape for Cuboid {
@@ -52,15 +79,7 @@ impl Shape for Cuboid {
         self.local_aabb()
     }
 
-    fn compute_local_bounding_sphere(&self) -> BoundingSphere {
-        self.local_bounding_sphere()
-    }
-
     fn compute_aabb(&self, position: &Isometry2<f32>) -> AABB {
         self.aabb(position)
-    }
-
-    fn mass_properties(&self, density: f32) -> MassProperties {
-        MassProperties::from_cuboid(density, self.half_extents)
     }
 }
