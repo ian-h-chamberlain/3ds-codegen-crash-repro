@@ -33,7 +33,7 @@ function query_if_crashed() {
 export RUSTFLAGS
 FLAGS=(
     -C opt-level=1
-    # -C debuginfo=0
+    -C debuginfo=0
     # -Z verify-llvm-ir=yes
     # -C save-temps
     # -C no-prepopulate-passes
@@ -53,14 +53,14 @@ function run_cargo_with_pass() {
 
     { set -x; } 2>/dev/null
     RUSTFLAGS="${FLAGS[*]} -C llvm-args=-opt-bisect-limit=${pass}"
-    cargo -v rustc --target armv6k-nintendo-3ds
+    cargo -v rustc --target armv6k-nintendo-3ds --target-dir=target-repro
     rc=$?
     { set +x; } 2>/dev/null
     return $rc
 }
 
 function run_executable() {
-    EXE_NAME=target/armv6k-nintendo-3ds/debug/crash-repro
+    EXE_NAME=target-repro/armv6k-nintendo-3ds/debug/crash-repro
     3dsxtool "${EXE_NAME}.elf" "${EXE_NAME}.3dsx"
 
     # wait for 3ds to come back after possibly crashing on the last round

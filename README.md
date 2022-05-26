@@ -157,3 +157,21 @@ BISECT: NOT running pass (228781) Type Promotion on function (_ZN102_$LT$core..i
 ```
 
 </details>
+
+## Repro for rapier2d example
+
+```console
+Attempting 37953 passes
++ RUSTFLAGS='-C opt-level=1 -C debuginfo=0 -C codegen-units=1 -C lto=off -C llvm-args=-opt-bisect-limit=37953'
++ cargo -v rustc --target armv6k-nintendo-3ds --target-dir=target-repro
+Sending crash-repro.3dsx, 567352 bytes
+266001 sent (46.88%), 24 blocks
+Did it crash? [y/n] n
+Attempting 37952 passes
++ RUSTFLAGS='-C opt-level=1 -C debuginfo=0 -C codegen-units=1 -C lto=off -C llvm-args=-opt-bisect-limit=37952'
++ cargo -v rustc --target armv6k-nintendo-3ds --target-dir=target-repro
+Sending crash-repro.3dsx, 588584 bytes
+275711 sent (46.84%), 24 blocks
+Did it crash? [y/n] y
+Final pass was: 37952
+```

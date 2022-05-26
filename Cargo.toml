@@ -2,11 +2,14 @@
 name = "crash-repro"
 version = "0.1.0"
 edition = "2021"
-authors = [""]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-linker-fix-3ds = { git = "https://github.com/Meziu/rust-linker-fix-3ds.git" }
-pthread-3ds = { git = "https://github.com/Meziu/pthread-3ds.git" }
-regex = "1.5.5"
+ctru-rs = { git = "https://github.com/Meziu/ctru-rs.git" }
+linker-fix-3ds = { path = "../rust-linker-fix-3ds" }
+pthread-3ds = { path = "../pthread-3ds" }
+parry2d = "0.9.0"
+libc = "0.2.126"
+nalgebra = "0.31.0"
+downcast-rs = "1.2.0"
