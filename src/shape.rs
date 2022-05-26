@@ -12,91 +12,7 @@ pub struct Cuboid {
 
 impl Cuboid {
     #[inline]
-    pub fn new(half_extents: Vector2<f32>) -> Cuboid {
-        Cuboid { half_extents }
-    }
-
-    pub fn scaled(self, scale: &Vector2<f32>) -> Self {
-        let new_hext = self.half_extents.component_mul(scale);
-        Self {
-            half_extents: new_hext,
-        }
-    }
-
-    pub fn vertex_feature_id(vertex: Point2<f32>) -> u32 {
-        ((vertex.x.to_bits() >> 31) & 0b001 | (vertex.y.to_bits() >> 30) & 0b010) as u32
-    }
-
-    pub fn support_feature(&self, local_dir: Vector2<f32>) -> PolygonalFeature {
-        self.support_face(local_dir)
-    }
-
-    pub fn support_face(&self, local_dir: Vector2<f32>) -> PolygonalFeature {
-        let he = self.half_extents;
-        let i = local_dir.iamin();
-        let j = (i + 1) % 2;
-        let mut a = Point2::origin();
-        a[i] = he[i];
-        a[j] = he[j].copysign(local_dir[j]);
-
-        let mut b = a;
-        b[i] = -he[i];
-
-        let vid1 = Self::vertex_feature_id(a);
-        let vid2 = Self::vertex_feature_id(b);
-        let fid = (vid1.max(vid2) << 2) | vid1.min(vid2) | 0b11_00_00;
-
-        PolygonalFeature {
-            vertices: [a, b],
-            vids: [vid1, vid2],
-            fid,
-            num_vertices: 2,
-        }
-    }
-
-    pub fn feature_normal(&self, feature: FeatureId) -> Option<Unit<Vector2<f32>>> {
-        match feature {
-            FeatureId::Face(id) => {
-                let mut dir: Vector2<f32> = nalgebra::zero();
-
-                if id < 2 {
-                    dir[id as usize] = 1.0;
-                } else {
-                    dir[id as usize - 2] = -1.0;
-                }
-                Some(Unit::new_unchecked(dir))
-            }
-            FeatureId::Vertex(id) => {
-                let mut dir: Vector2<f32> = nalgebra::zero();
-
-                match id {
-                    0b00 => {
-                        dir[0] = 1.0;
-                        dir[1] = 1.0;
-                    }
-                    0b01 => {
-                        dir[1] = 1.0;
-                        dir[0] = -1.0;
-                    }
-                    0b11 => {
-                        dir[0] = -1.0;
-                        dir[1] = -1.0;
-                    }
-                    0b10 => {
-                        dir[1] = -1.0;
-                        dir[0] = 1.0;
-                    }
-                    _ => return None,
-                }
-
-                Some(Unit::new_normalize(dir))
-            }
-            _ => None,
-        }
-    }
-
-    #[inline]
-    pub fn aabb(&self, pos: &Isometry2<f32>) -> AABB {
+    fn aabb(&self, pos: &Isometry2<f32>) -> AABB {
         let center = Point2::from(pos.translation.vector);
         let ws_half_extents = pos.absolute_transform_vector(&self.half_extents);
 
@@ -104,20 +20,14 @@ impl Cuboid {
     }
 
     #[inline]
-    pub fn local_aabb(&self) -> AABB {
+    fn local_aabb(&self) -> AABB {
         let half_extents = Point2::from(self.half_extents);
 
         AABB::new(-half_extents, half_extents)
     }
 
     #[inline]
-    pub fn bounding_sphere(&self, pos: &Isometry2<f32>) -> BoundingSphere {
-        let bv: BoundingSphere = self.local_bounding_sphere();
-        bv.transform_by(pos)
-    }
-
-    #[inline]
-    pub fn local_bounding_sphere(&self) -> BoundingSphere {
+    fn local_bounding_sphere(&self) -> BoundingSphere {
         let radius = self.half_extents.norm();
         BoundingSphere::new(Point2::origin(), radius)
     }

@@ -1,7 +1,6 @@
 #![feature(start)]
 #![feature(inline_const)]
 #![feature(thread_local)]
-#![allow(dead_code)]
 
 use std::cell::RefCell;
 use std::ops::Range;
