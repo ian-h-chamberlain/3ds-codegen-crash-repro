@@ -12,4 +12,3 @@ pthread-3ds = { path = "../pthread-3ds" }
 parry2d = "0.9.0"
 libc = "0.2.126"
 nalgebra = "0.31.0"
-downcast-rs = "1.2.0"

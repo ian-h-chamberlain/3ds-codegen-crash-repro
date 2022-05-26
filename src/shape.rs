@@ -1,4 +1,3 @@
-use downcast_rs::{impl_downcast, DowncastSync};
 use nalgebra::{Isometry2, Point2, RealField, Unit, Vector2};
 use parry2d::bounding_volume::{BoundingSphere, AABB};
 use parry2d::mass_properties::MassProperties;
@@ -124,7 +123,7 @@ impl Cuboid {
     }
 }
 
-pub trait Shape: DowncastSync {
+pub trait Shape {
     fn compute_local_aabb(&self) -> AABB;
     fn compute_local_bounding_sphere(&self) -> BoundingSphere;
 
@@ -144,24 +143,6 @@ pub trait Shape: DowncastSync {
     fn ccd_thickness(&self) -> f32;
 
     fn ccd_angular_thickness(&self) -> f32;
-}
-
-impl_downcast!(sync Shape);
-
-impl dyn Shape {
-    pub fn as_shape<T: Shape>(&self) -> Option<&T> {
-        self.downcast_ref()
-    }
-    pub fn as_shape_mut<T: Shape>(&mut self) -> Option<&mut T> {
-        self.downcast_mut()
-    }
-
-    pub fn as_cuboid(&self) -> Option<&Cuboid> {
-        self.downcast_ref()
-    }
-    pub fn as_cuboid_mut(&mut self) -> Option<&mut Cuboid> {
-        self.downcast_mut()
-    }
 }
 
 impl Shape for Cuboid {

@@ -52,7 +52,6 @@ name = "crash-repro"
 version = "0.1.0"
 dependencies = [
  "ctru-rs",
- "downcast-rs",
  "libc",
  "linker-fix-3ds",
  "nalgebra",
