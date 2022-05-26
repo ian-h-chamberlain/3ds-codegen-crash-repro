@@ -1,5 +1,4 @@
 use nalgebra::{Isometry2, Point2, Vector2};
-use parry2d::utils::IsometryOps;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 #[repr(C)]
@@ -11,6 +10,19 @@ pub struct Cuboid {
 pub struct AABB {
     pub mins: Point2<f32>,
     pub maxs: Point2<f32>,
+}
+
+pub trait IsometryOps<T> {
+    /// Transform a vector by the absolute value of the homogeneous matrix
+    /// equivalent to `self`.
+    fn absolute_transform_vector(&self, v: &Vector2<T>) -> Vector2<T>;
+}
+
+impl IsometryOps<f32> for Isometry2<f32> {
+    #[inline]
+    fn absolute_transform_vector(&self, v: &Vector2<f32>) -> Vector2<f32> {
+        self.rotation.to_rotation_matrix().into_inner().abs() * *v
+    }
 }
 
 impl AABB {
