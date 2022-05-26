@@ -1,7 +1,6 @@
-use nalgebra::{Isometry2, Point2, RealField, Unit, Vector2};
+use nalgebra::{Isometry2, Point2, Vector2};
 use parry2d::bounding_volume::{BoundingSphere, AABB};
 use parry2d::mass_properties::MassProperties;
-use parry2d::shape::{FeatureId, PolygonalFeature, ShapeType, TypedShape};
 use parry2d::utils::IsometryOps;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -35,6 +34,7 @@ impl Cuboid {
 
 pub trait Shape {
     fn compute_local_aabb(&self) -> AABB;
+
     fn compute_local_bounding_sphere(&self) -> BoundingSphere;
 
     fn compute_aabb(&self, position: &Isometry2<f32>) -> AABB {
@@ -45,14 +45,6 @@ pub trait Shape {
     }
 
     fn mass_properties(&self, density: f32) -> MassProperties;
-
-    fn shape_type(&self) -> ShapeType;
-
-    fn as_typed_shape(&self) -> TypedShape;
-
-    fn ccd_thickness(&self) -> f32;
-
-    fn ccd_angular_thickness(&self) -> f32;
 }
 
 impl Shape for Cuboid {
@@ -70,21 +62,5 @@ impl Shape for Cuboid {
 
     fn mass_properties(&self, density: f32) -> MassProperties {
         MassProperties::from_cuboid(density, self.half_extents)
-    }
-
-    fn shape_type(&self) -> ShapeType {
-        ShapeType::Cuboid
-    }
-
-    fn as_typed_shape(&self) -> TypedShape {
-        TypedShape::Cuboid(loop {})
-    }
-
-    fn ccd_thickness(&self) -> f32 {
-        self.half_extents.min()
-    }
-
-    fn ccd_angular_thickness(&self) -> f32 {
-        f32::frac_pi_2()
     }
 }
