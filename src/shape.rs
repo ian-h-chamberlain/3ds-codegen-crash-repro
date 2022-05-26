@@ -1,4 +1,4 @@
-use nalgebra::{Isometry2, Point2, Vector2};
+use nalgebra::{Matrix2, Rotation2, UnitComplex, Vector2};
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 #[repr(C)]
@@ -6,73 +6,37 @@ pub struct Cuboid {
     pub half_extents: Vector2<f32>,
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub struct AABB {
-    pub mins: Point2<f32>,
-    pub maxs: Point2<f32>,
-}
+pub struct AABB;
 
-pub trait IsometryOps<T> {
-    /// Transform a vector by the absolute value of the homogeneous matrix
-    /// equivalent to `self`.
-    fn absolute_transform_vector(&self, v: &Vector2<T>) -> Vector2<T>;
-}
-
-impl IsometryOps<f32> for Isometry2<f32> {
-    #[inline]
-    fn absolute_transform_vector(&self, v: &Vector2<f32>) -> Vector2<f32> {
-        self.rotation.to_rotation_matrix().into_inner().abs() * *v
-    }
-}
-
-impl AABB {
-    #[inline]
-    fn transform_by(&self, m: &Isometry2<f32>) -> Self {
-        let ls_center = self.center();
-        let center = m * ls_center;
-        let ws_half_extents = m.absolute_transform_vector(&self.half_extents());
-
-        Self {
-            mins: center + (-ws_half_extents),
-            maxs: center + ws_half_extents,
-        }
-    }
-
-    #[inline]
-    fn center(&self) -> Point2<f32> {
-        nalgebra::center(&self.mins, &self.maxs)
-    }
-
-    /// The half extents of this AABB.
-    #[inline]
-    fn half_extents(&self) -> Vector2<f32> {
-        let half: f32 = nalgebra::convert::<f64, f32>(0.5);
-        (self.maxs - self.mins) * half
-    }
-}
-
-impl Cuboid {
-    #[inline]
-    fn aabb(&self, pos: &Isometry2<f32>) -> AABB {
-        let center = Point2::from(pos.translation.vector);
-        let ws_half_extents = pos.absolute_transform_vector(&self.half_extents);
-
-        {
-            let mins = center - ws_half_extents;
-            let maxs = center + ws_half_extents;
-            AABB { mins, maxs }
-        }
-    }
+pub struct Isometry {
+    rotation: UnitComplex<f32>,
 }
 
 pub trait Shape {
-    fn compute_aabb(&self, position: &Isometry2<f32>) -> AABB {
+    fn compute_aabb(&self, _position: &Isometry) -> AABB {
         loop {}
     }
 }
 
 impl Shape for Cuboid {
-    fn compute_aabb(&self, position: &Isometry2<f32>) -> AABB {
-        self.aabb(position)
+    fn compute_aabb(&self, position: &Isometry) -> AABB {
+        let v = &self.half_extents;
+        let mul = {
+            let this = position.rotation;
+            let r = this.re.clone();
+            let i = this.im.clone();
+
+            Rotation2::from_matrix_unchecked(Matrix2::new(r.clone(), -i.clone(), i, r)).into_inner()
+        };
+
+        let mut res = mul.clone_owned();
+
+        for e in res.iter_mut() {
+            *e = e.abs();
+        }
+
+        let _ = res * *v;
+
+        loop {}
     }
 }
