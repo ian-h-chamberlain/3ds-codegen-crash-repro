@@ -63,34 +63,15 @@ impl Cuboid {
             AABB { mins, maxs }
         }
     }
-
-    #[inline]
-    fn local_aabb(&self) -> AABB {
-        let half_extents = Point2::from(self.half_extents);
-
-        {
-            let mins = -half_extents;
-            AABB {
-                mins,
-                maxs: half_extents,
-            }
-        }
-    }
 }
 
 pub trait Shape {
-    fn compute_local_aabb(&self) -> AABB;
-
     fn compute_aabb(&self, position: &Isometry2<f32>) -> AABB {
-        self.compute_local_aabb().transform_by(position)
+        loop {}
     }
 }
 
 impl Shape for Cuboid {
-    fn compute_local_aabb(&self) -> AABB {
-        self.local_aabb()
-    }
-
     fn compute_aabb(&self, position: &Isometry2<f32>) -> AABB {
         self.aabb(position)
     }
