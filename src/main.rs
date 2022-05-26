@@ -8,7 +8,6 @@ use std::ops::Range;
 use std::sync::Arc;
 
 use nalgebra::Vector2;
-use parry2d::shape::Shape;
 
 mod shape;
 
