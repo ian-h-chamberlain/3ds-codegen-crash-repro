@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libc = "0.2.126"
 linker-fix-3ds = { path = "../rust-linker-fix-3ds" }
 nalgebra = "0.31.0"
 pthread-3ds = { path = "../pthread-3ds" }

@@ -27,7 +27,6 @@ checksum = "cdead85bdec19c194affaeeb670c0e41fe23de31459efd1c174d049269cf02cc"
 name = "crash-repro"
 version = "0.1.0"
 dependencies = [
- "libc",
  "linker-fix-3ds",
  "nalgebra",
  "pthread-3ds",

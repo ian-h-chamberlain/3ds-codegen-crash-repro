@@ -6,9 +6,7 @@ use std::cell::RefCell;
 use std::ops::Range;
 use std::sync::Arc;
 
-use nalgebra::Vector2;
-
-mod shape;
+use nalgebra::{Matrix2, Vector2};
 
 struct ThreadInfo {
     _guard: Option<Range<usize>>,
@@ -17,6 +15,22 @@ struct ThreadInfo {
 
 struct Thread {
     inner: Arc<()>,
+}
+
+pub trait Shape {
+    fn compute_aabb(&self) {
+        loop {}
+    }
+}
+
+impl Shape for Vector2<f32> {
+    fn compute_aabb(&self) {
+        let mul = Matrix2::new(1.0, -1.0, 1.0, 1.0);
+
+        let _ = mul * self;
+
+        loop {}
+    }
 }
 
 #[start]
@@ -37,12 +51,11 @@ fn main(_argc: isize, _argv: *const *const u8) -> isize {
         },
     });
 
-    let v = Vector2::new(1.0, 1.0);
-    let c = shape::Cuboid { half_extents: v };
-    let a = Arc::new(c);
+    let v = Vector2::<f32>::new(1.0, 1.0);
+    let a = Arc::new(v);
 
     // without this cast present, crash does not occur
-    let _b = a as Arc<dyn shape::Shape>;
+    let _b = a as Arc<dyn Shape>;
 
     0
 }
