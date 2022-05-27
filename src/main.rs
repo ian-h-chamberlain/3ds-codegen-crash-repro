@@ -3,57 +3,39 @@
 #![feature(thread_local)]
 
 use std::cell::RefCell;
-use std::ops::Range;
 use std::sync::Arc;
 
 use nalgebra::{Matrix2, Vector2};
 
+struct Thread {
+    _inner: Arc<()>,
+}
+
 struct ThreadInfo {
-    _guard: Option<Range<usize>>,
+    // not sure why but the size here matters: Option<u32> doesn't crash
+    _guard: Option<(u32, u32)>,
     _thread: Thread,
 }
 
-struct Thread {
-    inner: Arc<()>,
-}
-
-pub trait Shape {
-    fn compute_aabb(&self);
-}
-
-impl Shape for Vector2<f32> {
-    fn compute_aabb(&self) {
-        let mul = Matrix2::new(1.0, 0.0, 0.0, 1.0);
-
-        // Unfortunately the matrix Mul implementation is very complicated and
-        // not easy to inline for further minimization:
-        let _ = mul * self;
-    }
-}
+// without #[thread_local], crash does not occur
+#[thread_local]
+static THREAD_INFO: RefCell<Option<ThreadInfo>> = const { RefCell::new(None) };
 
 #[start]
 fn main(_argc: isize, _argv: *const *const u8) -> isize {
-    // without #[thread_local], crash does not occur
-    #[thread_local]
-    static THREAD_INFO: RefCell<Option<ThreadInfo>> = const { RefCell::new(None) };
-
     linker_fix_3ds::init();
     pthread_3ds::init();
 
-    // crash seems to happen here due to "already borrowed":
-    let mut info = THREAD_INFO.borrow_mut();
-    info.get_or_insert_with(|| ThreadInfo {
-        _guard: None,
-        _thread: Thread {
-            inner: Arc::new(()),
-        },
-    });
+    // crash seems to happen here due to "already borrowed", meaning the RefCell
+    // was initialized in the wrong state, I guess?
+    let _borrow = THREAD_INFO.borrow_mut();
 
     let v = Vector2::<f32>::new(1.0, 1.0);
-    let a = Arc::new(v);
+    let mul = Matrix2::new(1.0, 0.0, 0.0, 1.0);
 
-    // without this cast present, crash does not occur
-    let _b = a as Arc<dyn Shape>;
+    // Unfortunately the matrix Mul implementation is very complicated and
+    // not easy to inline for further minimization:
+    let _ = mul * v;
 
     0
 }
