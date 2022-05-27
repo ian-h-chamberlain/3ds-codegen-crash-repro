@@ -18,18 +18,16 @@ struct Thread {
 }
 
 pub trait Shape {
-    fn compute_aabb(&self) {
-        loop {}
-    }
+    fn compute_aabb(&self);
 }
 
 impl Shape for Vector2<f32> {
     fn compute_aabb(&self) {
-        let mul = Matrix2::new(1.0, -1.0, 1.0, 1.0);
+        let mul = Matrix2::new(1.0, 0.0, 0.0, 1.0);
 
+        // Unfortunately the matrix Mul implementation is very complicated and
+        // not easy to inline for further minimization:
         let _ = mul * self;
-
-        loop {}
     }
 }
 
