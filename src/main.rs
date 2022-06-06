@@ -1,23 +1,35 @@
+#![feature(asm_sym)]
 #![feature(start)]
-#![feature(inline_const)]
 #![feature(thread_local)]
 
-use std::cell::RefCell;
+use std::arch::asm;
+use std::cell::{RefCell, UnsafeCell};
 use std::sync::Arc;
 
 use ctru::services::soc::Soc;
-use nalgebra::{Matrix2, Vector2};
 
 #[derive(Debug)]
-struct ThreadInfo {
-    // not sure why but the size here matters: Option<u32> doesn't crash
+pub struct ThreadInfo {
+    // not sure why but the size or align here matters: Option<u32> doesn't crash
     _guard: Option<(u32, u32)>,
     _thread: Arc<()>,
 }
 
 // without #[thread_local], crash does not occur
 #[thread_local]
-static THREAD_INFO: RefCell<Option<ThreadInfo>> = const { RefCell::new(None) };
+static LOCAL_STATIC: RefCell<Option<ThreadInfo>> = RefCell::<Option<ThreadInfo>>::new(None);
+
+const MASK_BUF_SIZE: usize = 287;
+
+#[repr(align(32))]
+struct MaskBuffer {
+    _buffer: [u8; MASK_BUF_SIZE],
+}
+
+#[thread_local]
+static BUF: UnsafeCell<MaskBuffer> = UnsafeCell::new(MaskBuffer {
+    _buffer: [0; MASK_BUF_SIZE],
+});
 
 #[start]
 fn main(_argc: isize, _argv: *const *const u8) -> isize {
@@ -27,14 +39,31 @@ fn main(_argc: isize, _argv: *const *const u8) -> isize {
     let mut soc = Soc::init().unwrap();
     let _ = soc.redirect_to_3dslink(true, true);
 
-    let v = Vector2::<f32>::new(1.0, 1.0);
-    let mul = Matrix2::new(1.0, 0.0, 0.0, 0.0);
+    let mut offset: u32;
+    unsafe {
+        asm!(
+            "ldr {offset}, ={local_static}(TPOFF)",
+            local_static = sym LOCAL_STATIC,
+            offset = out(reg) offset,
+            // tmp = out(reg) _,
+        );
+    }
+    eprintln!("LOCAL_STATIC(TPOFF) = {offset:#X}");
 
-    // Unfortunately the matrix Mul implementation is very complicated and
-    // not easy to inline for further minimization:
-    let _ = mul * v;
+    unsafe {
+        asm!(
+            "ldr {offset}, ={local_static}(TPOFF)",
+            local_static = sym BUF,
+            offset = out(reg) offset,
+            // tmp = out(reg) _,
+        );
+    }
+    eprintln!("BUF(TPOFF) = {offset:#X}");
 
-    if THREAD_INFO.try_borrow_mut().is_err() {
+    // We have to access BUF somehow to reproduce:
+    dbg!(&BUF);
+
+    if LOCAL_STATIC.try_borrow_mut().is_err() {
         eprintln!("reproduced!");
     } else {
         eprintln!("nothing to see here");

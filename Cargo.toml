@@ -8,5 +8,4 @@ edition = "2021"
 [dependencies]
 ctru-rs = { version = "0.7.1", path = "../ctru-rs/ctru-rs" }
 linker-fix-3ds = { path = "../rust-linker-fix-3ds" }
-nalgebra = "0.31.0"
 pthread-3ds = { path = "../pthread-3ds" }
