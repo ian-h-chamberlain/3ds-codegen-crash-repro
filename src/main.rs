@@ -1,35 +1,21 @@
-#![feature(asm_sym)]
 #![feature(start)]
 #![feature(thread_local)]
 
-use std::arch::asm;
-use std::cell::{RefCell, UnsafeCell};
-use std::sync::Arc;
-
 use ctru::services::soc::Soc;
 
-#[derive(Debug)]
-pub struct ThreadInfo {
-    // not sure why but the size or align here matters: Option<u32> doesn't crash
-    _guard: Option<(u32, u32)>,
-    _thread: Arc<()>,
-}
+#[repr(align(4))]
+pub struct Align4([u8; 3]);
 
-// without #[thread_local], crash does not occur
-#[thread_local]
-static LOCAL_STATIC: RefCell<Option<ThreadInfo>> = RefCell::<Option<ThreadInfo>>::new(None);
-
-const MASK_BUF_SIZE: usize = 287;
-
-#[repr(align(32))]
-struct MaskBuffer {
-    _buffer: [u8; MASK_BUF_SIZE],
-}
+const INIT: [u8; 3] = [0, 1, 2];
 
 #[thread_local]
-static BUF: UnsafeCell<MaskBuffer> = UnsafeCell::new(MaskBuffer {
-    _buffer: [0; MASK_BUF_SIZE],
-});
+static BUF_4: Align4 = Align4(INIT);
+
+#[repr(align(16))]
+struct Align16([u8; 3]);
+
+#[thread_local]
+static BUF_16: Align16 = Align16([0; 3]);
 
 #[start]
 fn main(_argc: isize, _argv: *const *const u8) -> isize {
@@ -39,34 +25,14 @@ fn main(_argc: isize, _argv: *const *const u8) -> isize {
     let mut soc = Soc::init().unwrap();
     let _ = soc.redirect_to_3dslink(true, true);
 
-    let mut offset: u32;
-    unsafe {
-        asm!(
-            "ldr {offset}, ={local_static}(TPOFF)",
-            local_static = sym LOCAL_STATIC,
-            offset = out(reg) offset,
-            // tmp = out(reg) _,
-        );
-    }
-    eprintln!("LOCAL_STATIC(TPOFF) = {offset:#X}");
-
-    unsafe {
-        asm!(
-            "ldr {offset}, ={local_static}(TPOFF)",
-            local_static = sym BUF,
-            offset = out(reg) offset,
-            // tmp = out(reg) _,
-        );
-    }
-    eprintln!("BUF(TPOFF) = {offset:#X}");
-
     // We have to access BUF somehow to reproduce:
-    dbg!(&BUF);
+    dbg!(&BUF_16.0);
 
-    if LOCAL_STATIC.try_borrow_mut().is_err() {
-        eprintln!("reproduced!");
-    } else {
+    if BUF_4.0 == INIT {
         eprintln!("nothing to see here");
+    } else {
+        eprintln!("reproduced!");
+        dbg!(BUF_4.0);
     }
 
     0
